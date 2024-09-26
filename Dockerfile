@@ -1,11 +1,12 @@
-FROM openjdk:11-jre-slim
+FROM openjdk:17-slim
 
 # Set the working directory in the container
 WORKDIR /app
 
 # Copy the packaged jar file into the container
-COPY target/your-app-name.jar app.jar
+COPY target/*.jar app.jar
 
+# Make port available outside container
 EXPOSE 8081
 
 # Run the jar file
