@@ -15,24 +15,21 @@ import java.util.concurrent.atomic.AtomicLong;
 public class DocumentResource {
 
     private List<Document> documents = new ArrayList<>();
-    private AtomicLong counter = new AtomicLong();
 
     // Get all documents
     @GetMapping
     public ResponseEntity<List<Document>> getDocuments() {
 
         //returns hardcoded list with 1 entry
-        documents = new ArrayList<>();
-        Document document = new Document();
-        document.setContent("Document Content");
-        documents.add(document);
+        //documents = new ArrayList<>();
+        //Document document = new Document();
+        //document.setContent("Document Content");
+        //documents.add(document);
         return ResponseEntity.ok(documents);
     }
-
     // Add a new document
     @PostMapping
     public ResponseEntity<Document> addDocument(@RequestBody Document document) {
-        document.setId(counter.incrementAndGet());
         document.setDateOfCreation(LocalDateTime.now());
         documents.add(document);
         return ResponseEntity.status(HttpStatus.CREATED).body(document);
