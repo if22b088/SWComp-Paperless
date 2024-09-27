@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
@@ -16,6 +17,7 @@ public class DocumentResource {
 
     private List<Document> documents = new ArrayList<>();
 
+
     // Get all documents
     @GetMapping
     public ResponseEntity<List<Document>> getDocuments() {
@@ -25,6 +27,18 @@ public class DocumentResource {
         //Document document = new Document();
         //document.setContent("Document Content");
         //documents.add(document);
+
+        //creates a document in case get is first test request
+        if (documents.isEmpty()) {
+            Document testDocument = new Document();
+            testDocument.setId(1);
+            testDocument.setTitle("Test Document");
+            testDocument.setContent("This is a test document.");
+            testDocument.setTags(Arrays.asList("test", "sample"));
+            testDocument.setDateOfCreation(LocalDateTime.now());
+
+            documents.add(testDocument);
+        }
         return ResponseEntity.ok(documents);
     }
     // Add a new document
