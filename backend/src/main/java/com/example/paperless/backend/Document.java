@@ -1,4 +1,4 @@
-package com.example.paperless;
+package com.example.paperless.backend;
 
 import lombok.Getter;
 import lombok.Setter;

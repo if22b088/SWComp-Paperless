@@ -1,0 +1,88 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f4f4f4;
+}
+
+#dashboard {
+    width: auto;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: white;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h1, h2 {
+    text-align: center;
+}
+
+button {
+    padding: 10px 15px;
+    margin: 10px 0;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+input[type="text"],
+input[type="file"] {
+    width: calc(100% - 22px);
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+#searchResults {
+    margin-top: 20px;
+}
+
+/*
+#documentList {
+    list-style-type: none;
+    padding: 0;
+}
+
+.document-item {
+    padding: 10px;
+    border: 1px solid #ddd;
+    margin: 5px 0;
+    display: flex;
+    justify-content: space-between;
+}
+*/
+
+/* Styles for the document table */
+#documentTable {
+    width: 100%; /* Ensure the table takes the full width of the container */
+    border-collapse: collapse; /* Collapse borders to avoid double borders */
+}
+
+#documentTable th,
+#documentTable td {
+    border-right: 1px solid #ccc; /* Add a right border to cells for column separation */
+    padding: 10px; /* Add padding for better spacing */
+    text-align: left; /* Align text to the left */
+}
+
+#documentTable th:last-child,
+#documentTable td:last-child {
+    border-right: none; /* Remove right border from the last column */
+}
+
+#documentTable th {
+    background-color: #f2f2f2; /* Light background for headers */
+}
+
+#documentTable tr:nth-child(even) {
+    background-color: #f9f9f9; /* Zebra striping for better readability */
+}

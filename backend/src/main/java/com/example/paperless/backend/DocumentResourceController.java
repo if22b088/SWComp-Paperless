@@ -1,4 +1,4 @@
-package com.example.paperless;
+package com.example.paperless.backend;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,11 +9,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicLong;
 
 @RestController
 @RequestMapping("/documents")
-public class DocumentResource {
+@CrossOrigin
+public class DocumentResourceController {
 
     private List<Document> documents = new ArrayList<>();
 
@@ -32,7 +32,7 @@ public class DocumentResource {
         if (documents.isEmpty()) {
             Document testDocument = new Document();
             testDocument.setId(1);
-            testDocument.setTitle("Test Document");
+            testDocument.setTitle("Test Document123");
             testDocument.setContent("This is a test document.");
             testDocument.setTags(Arrays.asList("test", "sample"));
             testDocument.setDateOfCreation(LocalDateTime.now());

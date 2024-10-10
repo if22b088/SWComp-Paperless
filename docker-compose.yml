@@ -1,13 +1,20 @@
 version: '3.8'
 
 services:
-  app:
-    build: .
+  rest-api:
+    build: ./backend
     ports:
       - "8081:8081"
     networks:
       - app-network
-
+  ui:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    networks:
+      - app-network
 networks:
   app-network:
     driver: bridge
