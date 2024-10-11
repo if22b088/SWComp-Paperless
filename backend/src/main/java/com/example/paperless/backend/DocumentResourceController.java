@@ -32,7 +32,7 @@ public class DocumentResourceController {
         if (documents.isEmpty()) {
             Document testDocument = new Document();
             testDocument.setId(1);
-            testDocument.setTitle("Test Document123");
+            testDocument.setTitle("Test Document");
             testDocument.setContent("This is a test document.");
             testDocument.setTags(Arrays.asList("test", "sample"));
             testDocument.setDateOfCreation(LocalDateTime.now());
