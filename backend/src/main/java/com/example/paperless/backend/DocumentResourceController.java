@@ -1,5 +1,6 @@
 package com.example.paperless.backend;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,10 +16,12 @@ import java.util.Optional;
 @CrossOrigin
 public class DocumentResourceController {
 
-    private List<Document> documents = new ArrayList<>();
+    //private List<Document> documents = new ArrayList<>();
+
+    @Autowired
+    private DocumentRepository documentRepository;
 
 
-    // Get all documents
     @GetMapping
     public ResponseEntity<List<Document>> getDocuments() {
 
@@ -28,7 +31,9 @@ public class DocumentResourceController {
         //document.setContent("Document Content");
         //documents.add(document);
 
-        //creates a document in case get is first test request
+        List<Document> documents = documentRepository.findAll();
+
+        /*//creates a document in case get is first test request
         if (documents.isEmpty()) {
             Document testDocument = new Document();
             testDocument.setId(1);
@@ -39,44 +44,50 @@ public class DocumentResourceController {
 
             documents.add(testDocument);
         }
+
+         */
+
         return ResponseEntity.ok(documents);
     }
-    // Add a new document
+    @GetMapping("/{id}")
+    public ResponseEntity<Document> getDocumentById(@PathVariable Long id) {
+        Document document = documentRepository.findById(id).orElse(null);
+        if (document == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+        return ResponseEntity.ok(document);
+    }
+
     @PostMapping
     public ResponseEntity<Document> addDocument(@RequestBody Document document) {
         document.setDateOfCreation(LocalDateTime.now());
-        documents.add(document);
+        //documents.add(document);
+        Document savedDocument = documentRepository.save(document);
         return ResponseEntity.status(HttpStatus.CREATED).body(document);
     }
 
-    // Update an existing document
-    @PutMapping("/{id}")
-    public ResponseEntity<Document> updateDocument(@PathVariable("id") long id, @RequestBody Document updatedDocument) {
-        Optional<Document> existingDocumentOpt = documents.stream()
-                .filter(document -> document.getId() == id)
-                .findFirst();
 
-        if (existingDocumentOpt.isPresent()) {
-            Document existingDocument = existingDocumentOpt.get();
-            existingDocument.setTitle(updatedDocument.getTitle());
-            existingDocument.setContent(updatedDocument.getContent());
-            existingDocument.setTags(updatedDocument.getTags());
-            return ResponseEntity.ok(existingDocument);
+    @PutMapping("/{id}")
+    public ResponseEntity<Document> updateDocument(@PathVariable Long id, @RequestBody Document documentDetails) {
+        Optional<Document> tempDocument = documentRepository.findById(id);
+        if (tempDocument.isPresent()) {
+            Document document = tempDocument.get();
+            document.setTitle(documentDetails.getTitle());
+            document.setContent(documentDetails.getContent());
+            document.setDateOfCreation(LocalDateTime.now());
+            Document updatedDocument = documentRepository.save(document);
+            return ResponseEntity.ok(updatedDocument);
         } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }
 
-    // Delete an existing document
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteDocument(@PathVariable("id") long id) {
-        Optional<Document> existingDocumentOpt = documents.stream()
-                .filter(document -> document.getId() == id)
-                .findFirst();
-
-        if (existingDocumentOpt.isPresent()) {
-            documents.remove(existingDocumentOpt.get());
-            return ResponseEntity.noContent().build();
+    public ResponseEntity<Void> deleteDocument(@PathVariable Long id) {
+        Optional<Document> tempDocument = documentRepository.findById(id);
+        if (tempDocument.isPresent()) {
+            documentRepository.deleteById(id);
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
