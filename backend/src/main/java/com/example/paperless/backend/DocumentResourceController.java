@@ -6,8 +6,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,37 +14,13 @@ import java.util.Optional;
 @CrossOrigin
 public class DocumentResourceController {
 
-    //private List<Document> documents = new ArrayList<>();
-
     @Autowired
     private DocumentRepository documentRepository;
 
 
     @GetMapping
     public ResponseEntity<List<Document>> getDocuments() {
-
-        //returns hardcoded list with 1 entry
-        //documents = new ArrayList<>();
-        //Document document = new Document();
-        //document.setContent("Document Content");
-        //documents.add(document);
-
         List<Document> documents = documentRepository.findAll();
-
-        /*//creates a document in case get is first test request
-        if (documents.isEmpty()) {
-            Document testDocument = new Document();
-            testDocument.setId(1);
-            testDocument.setTitle("Test Document");
-            testDocument.setContent("This is a test document.");
-            testDocument.setTags(Arrays.asList("test", "sample"));
-            testDocument.setDateOfCreation(LocalDateTime.now());
-
-            documents.add(testDocument);
-        }
-
-         */
-
         return ResponseEntity.ok(documents);
     }
     @GetMapping("/{id}")
@@ -60,10 +34,10 @@ public class DocumentResourceController {
 
     @PostMapping
     public ResponseEntity<Document> addDocument(@RequestBody Document document) {
+        System.out.println("Received document: " + document);
         document.setDateOfCreation(LocalDateTime.now());
-        //documents.add(document);
         Document savedDocument = documentRepository.save(document);
-        return ResponseEntity.status(HttpStatus.CREATED).body(document);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedDocument);
     }
 
 

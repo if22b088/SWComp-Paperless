@@ -1,0 +1,9 @@
+POST http://localhost:8080/resources/heroes/v1
+Content-Type: application/json
+
+{
+    "title": "Sample Document2",
+    "content": "This is the content of the sample document.",
+    "tags": ["sample", "document"],
+    "dateOfCreation": "2024-10-23T10:00:00"
+}
