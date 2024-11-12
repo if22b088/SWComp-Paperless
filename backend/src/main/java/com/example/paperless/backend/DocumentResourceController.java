@@ -18,12 +18,18 @@ import java.util.Optional;
 @Log //default lombok logger
 public class DocumentResourceController {
 
+
+    @Autowired
+    private RabbitMQSenderService rabbitMQService;
+
     @Autowired
     private DocumentRepository documentRepository;
 
     @GetMapping
     public ResponseEntity<List<Document>> getDocuments() {
+        log.info("Fetching all documents...");
         List<Document> documents = documentRepository.findAll();
+        log.info("Found " + documents.size() + " documents.");
         return ResponseEntity.ok(documents);
     }
     @GetMapping("/{id}")
@@ -37,25 +43,35 @@ public class DocumentResourceController {
 
     @PostMapping(consumes = "multipart/form-data")
     public ResponseEntity<Document> addDocument(@RequestParam("document") MultipartFile file) {
-
+        try {
             if (file.isEmpty()) {
+                log.warning("Received empty file upload request.");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             }
 
-            // Save file to server
             String fileName = file.getOriginalFilename();
+            log.info("Received file upload with filename: " + fileName);
             //gets the file content as byte array;
             //byte[] fileContent = file.getBytes();
 
-            // Create Document object and save to database
+            // Save document to database
             Document document = new Document();
             document.setTitle(fileName);
             document.setContent("File uploaded: " + fileName);
             document.setDateOfCreation(LocalDateTime.now());
             Document savedDocument = documentRepository.save(document);
+            log.info("Document saved with ID: " + savedDocument.getId());
 
+
+            // Send a message to RabbitMQ after the document is stored
+            String message = "New document uploaded: " + fileName;
+            rabbitMQService.sendMessage(message);
+            log.info("Message sent to RabbitMQ: " + message);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedDocument);
-
+        } catch (Exception e) {
+            log.severe("Error occurred while processing the document upload: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 /*
     @PostMapping(consumes = "multipart/form-data")
@@ -90,11 +106,14 @@ public class DocumentResourceController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteDocument(@PathVariable Long id) {
+        log.info("Deleting document with ID: " + id);
         Optional<Document> tempDocument = documentRepository.findById(id);
         if (tempDocument.isPresent()) {
+            log.info("Document with ID " + id + " deleted successfully.");
             documentRepository.deleteById(id);
             return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         } else {
+            log.warning("Document with ID " + id + " not found for deletion.");
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
