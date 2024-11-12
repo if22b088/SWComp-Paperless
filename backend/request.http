@@ -1,4 +1,4 @@
-POST http://localhost:8080/resources/heroes/v1
+POST http://localhost:8080/documents
 Content-Type: application/json
 
 {

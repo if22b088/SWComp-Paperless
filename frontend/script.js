@@ -1,5 +1,31 @@
 document.getElementById('uploadButton').addEventListener('click', async () => {
     const fileInput = document.getElementById('documentUpload');
+
+
+    const file = fileInput.files[0];
+
+    if (file) {
+        const formData = new FormData();
+        formData.append('document', file);
+
+        try {
+            const response = await fetch('http://localhost:8081/documents', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (response.ok) {
+                alert('Document uploaded successfully!');
+                loadDocuments();
+            } else {
+                alert('Failed to upload document.');
+            }
+        } catch (error) {
+            console.error('Error uploading document:', error);
+        }
+    } else {
+        alert('Please select a file to upload.');
+    }
 });
 
 document.getElementById('searchButton').addEventListener('click', async () => {
