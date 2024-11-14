@@ -28,7 +28,7 @@ public class RabbitMQSenderService {
         try {
             // exchange and routingKey are automatically created through Spring RabbitMQConfig class (alternatively could be created manually via webUI)
             amqpTemplate.convertAndSend(exchange, routingKey, message);
-            log.info("Message successfully sent to RabbitMQ exchange 'documentExchange' with routing key: " + routingKey);
+            log.info("Message successfully sent to RabbitMQ exchange '" + exchange + "' with routing key: '" + routingKey + "'");
         } catch (Exception e) {
             log.severe("Failed to send message to RabbitMQ: " + e.getMessage());
         }
