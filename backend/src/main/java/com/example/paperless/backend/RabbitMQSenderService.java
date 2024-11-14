@@ -21,13 +21,13 @@ public class RabbitMQSenderService {
 
     public void sendMessage(String message) {
 
-        //routing key used for queue (queue has to exist (was created manually via webUI)
-        String routingKey = "document.upload";
+        String routingKey = RabbitMQConfig.ROUTING_KEY;//"document.upload";
+        String exchange = RabbitMQConfig.EXCHANGE_NAME;
         log.info("Preparing to send message to RabbitMQ with routing key: " + routingKey);
-        log.info("Message: " + message);
+        log.info("Message: " + message); // <-- maybe too much? careful with sensitive information
         try {
-            // "documentExchange" is the exchange name, has to exist on rabbitMQ server (was created manually via webUI)
-            amqpTemplate.convertAndSend("documentExchange", routingKey, message);
+            // exchange and routingKey are automatically created through Spring RabbitMQConfig class (alternatively could be created manually via webUI)
+            amqpTemplate.convertAndSend(exchange, routingKey, message);
             log.info("Message successfully sent to RabbitMQ exchange 'documentExchange' with routing key: " + routingKey);
         } catch (Exception e) {
             log.severe("Failed to send message to RabbitMQ: " + e.getMessage());
