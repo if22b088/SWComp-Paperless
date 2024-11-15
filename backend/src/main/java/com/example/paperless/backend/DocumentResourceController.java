@@ -19,11 +19,15 @@ import java.util.Optional;
 public class DocumentResourceController {
 
 
-    @Autowired
-    private RabbitMQSenderService rabbitMQService;
+    private final RabbitMQSenderService rabbitMQService;
+
+    private final DocumentRepository documentRepository;
 
     @Autowired
-    private DocumentRepository documentRepository;
+    public DocumentResourceController(RabbitMQSenderService rabbitMQService, DocumentRepository documentRepository) {
+        this.rabbitMQService = rabbitMQService;
+        this.documentRepository = documentRepository;
+    }
 
     @GetMapping
     public ResponseEntity<List<Document>> getDocuments() {
@@ -32,6 +36,7 @@ public class DocumentResourceController {
         log.info("Found " + documents.size() + " documents.");
         return ResponseEntity.ok(documents);
     }
+
     @GetMapping("/{id}")
     public ResponseEntity<Document> getDocumentById(@PathVariable Long id) {
         Document document = documentRepository.findById(id).orElse(null);
@@ -52,22 +57,23 @@ public class DocumentResourceController {
             String fileName = file.getOriginalFilename();
             log.info("Received file upload with filename: " + fileName);
             //gets the file content as byte array;
-            //byte[] fileContent = file.getBytes();
+            byte[] fileContent = file.getBytes();
 
             // Save document to database
             Document document = new Document();
             document.setTitle(fileName);
             document.setContent("File uploaded: " + fileName);
+            document.setFileData(fileContent);
             document.setDateOfCreation(LocalDateTime.now());
             Document savedDocument = documentRepository.save(document);
             log.info("Document saved with ID: " + savedDocument.getId());
-
 
             // Send a message to RabbitMQ after the document is stored
             String message = "New document uploaded: " + fileName;
             rabbitMQService.sendMessage(message);
             log.info("Message sent to RabbitMQ: " + message);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedDocument);
+
         } catch (Exception e) {
             log.severe("Error occurred while processing the document upload: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);

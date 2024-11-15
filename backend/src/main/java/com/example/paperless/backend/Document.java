@@ -35,6 +35,11 @@ public class Document {
     @Column
     private LocalDateTime dateOfCreation;
 
+
+    @Lob
+    @Column
+    private byte[] fileData;
+
     public Document() {
         this.dateOfCreation = LocalDateTime.now();
     }
