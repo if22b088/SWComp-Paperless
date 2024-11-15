@@ -38,6 +38,11 @@ public class Document {
     @PastOrPresent(message = "Date of creation cannot be in the future")
     private LocalDateTime dateOfCreation;
 
+
+    @Lob
+    @Column
+    private byte[] fileData;
+
     public Document() {
         this.dateOfCreation = LocalDateTime.now();
     }
