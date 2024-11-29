@@ -2,6 +2,7 @@ package com.example.paperless.backend;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -33,6 +34,8 @@ public class Document {
     private List<@Size(min = 2, max = 20, message = "Each tag must be between 2 and 20 characters") String> tags = new ArrayList<>();
 
     @Column
+    @NotNull(message = "Date of creation must not be null")
+    @PastOrPresent(message = "Date of creation cannot be in the future")
     private LocalDateTime dateOfCreation;
 
 /*
