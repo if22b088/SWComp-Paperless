@@ -21,7 +21,7 @@ public class RabbitMQSenderService {
 
     public void sendMessage(String message) {
 
-        String routingKey = RabbitMQConfig.ROUTING_KEY;//"document.upload";
+        String routingKey = RabbitMQConfig.DOCUMENT_ROUTING_KEY;//"document.upload";
         String exchange = RabbitMQConfig.EXCHANGE_NAME;
         log.info("Preparing to send message to RabbitMQ with routing key: " + routingKey);
         log.info("Message: " + message); // <-- maybe too much? careful with sensitive information

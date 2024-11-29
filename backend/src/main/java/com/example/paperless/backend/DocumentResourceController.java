@@ -1,5 +1,9 @@
 package com.example.paperless.backend;
 
+import io.minio.BucketExistsArgs;
+import io.minio.MakeBucketArgs;
+import io.minio.MinioClient;
+import io.minio.PutObjectArgs;
 import lombok.extern.java.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -7,7 +11,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -23,10 +30,13 @@ public class DocumentResourceController {
 
     private final DocumentRepository documentRepository;
 
+    private final MinioClient minioClient;
+
     @Autowired
-    public DocumentResourceController(RabbitMQSenderService rabbitMQService, DocumentRepository documentRepository) {
+    public DocumentResourceController(RabbitMQSenderService rabbitMQService, DocumentRepository documentRepository,MinioClient minioClient) {
         this.rabbitMQService = rabbitMQService;
         this.documentRepository = documentRepository;
+        this.minioClient = minioClient;
     }
 
     @GetMapping
@@ -56,22 +66,48 @@ public class DocumentResourceController {
 
             String fileName = file.getOriginalFilename();
             log.info("Received file upload with filename: " + fileName);
-            //gets the file content as byte array;
-            byte[] fileContent = file.getBytes();
+
+
+            // save/upload document file to MinIO
+            String bucketName = "documents";  // minIO bucket to store the file
+            //String fileKey = "uploads/" + fileName;  // file path within the bucket
+
+            InputStream fileStream = new ByteArrayInputStream(file.getBytes());
+
+            // check if the bucket exists
+            boolean bucketExists = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build());
+
+            if (!bucketExists) {
+                log.info("Bucket does not exist. Creating bucket: " + bucketName);
+                minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
+            } else {
+                log.info("Bucket already exists: " + bucketName);
+            }
+
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(fileName)  // object name (file name)
+                            //baeldung syntax did not work here
+                            .stream(fileStream, fileStream.available(), -1)  // file content, file size, -1 for unlimited size
+                            .build()
+            );
+
+            //minioClient.putObject(bucketName, fileKey, fileStream, file.getContentType(), file.getSize());
 
             // Save document to database
             Document document = new Document();
             document.setTitle(fileName);
             document.setContent("File uploaded: " + fileName);
-            document.setFileData(fileContent);
+            //document.setFileData(fileContent); <-- not needed because we store in minIO
             document.setDateOfCreation(LocalDateTime.now());
             Document savedDocument = documentRepository.save(document);
             log.info("Document saved with ID: " + savedDocument.getId());
 
-            // Send a message to RabbitMQ after the document is stored
-            String message = "New document uploaded: " + fileName;
-            rabbitMQService.sendMessage(message);
-            log.info("Message sent to RabbitMQ: " + message);
+            // send a message to RabbitMQ after the document is stored
+
+            rabbitMQService.sendMessage("documents/" + fileName);
+            log.info("Message sent to RabbitMQ: " + fileName);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedDocument);
 
         } catch (Exception e) {
@@ -79,21 +115,6 @@ public class DocumentResourceController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
-/*
-    @PostMapping(consumes = "multipart/form-data")
-    public ResponseEntity<Document> addDocument(@RequestBody Document document) {
-
-        log.info("Received document" + document.getTitle());
-
-        document.setDateOfCreation(LocalDateTime.now());
-        //for testing
-        document.setContent("pdf uploaded");
-        Document savedDocument = documentRepository.save(document);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedDocument);
-    }
-
- */
-
 
     @PutMapping("/{id}")
     public ResponseEntity<Document> updateDocument(@PathVariable Long id, @RequestBody Document documentDetails) {

@@ -46,6 +46,30 @@ services:
     networks:
       - app-network
 
+  ocr-service:
+    build: ./OCR
+    environment:
+      - SPRING_RABBITMQ_USERNAME=${RABBITMQ_USER}
+      - SPRING_RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+    depends_on:
+      - rabbitmq
+    networks:
+      - app-network
+
+  minio:
+    image: quay.io/minio/minio
+    environment:
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+    ports:
+      - "9000:9000"  # API
+      - "9001:9001"  # Console
+    command: server /data --console-address ":9001"
+   # volumes:
+   #   - minio_data:/data
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge
