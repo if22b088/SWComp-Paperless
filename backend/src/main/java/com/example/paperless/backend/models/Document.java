@@ -1,4 +1,4 @@
-package com.example.paperless.backend;
+package com.example.paperless.backend.models;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -25,7 +25,7 @@ public class Document {
     @Size(min = 3, max = 100, message = "Title must be between 3 and 100 characters")
     private String title;
 
-    @Column
+    @Column(columnDefinition = "TEXT")
     @NotNull(message = "Content must not be null")
     @Size(min = 10, message = "Content must be at least 10 characters long")
     private String content;

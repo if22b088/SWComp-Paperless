@@ -1,4 +1,4 @@
-package com.example.paperless.backend;
+package com.example.paperless.backend.rabbitMQ;
 
 import lombok.extern.java.Log;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,5 +1,6 @@
 package com.example.paperless.backend;
 
+import com.example.paperless.backend.models.Document;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;

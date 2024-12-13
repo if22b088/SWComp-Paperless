@@ -23,6 +23,8 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Map;
 
 
 @Component
@@ -37,24 +39,48 @@ public class OcrMessageListener {
 
     private MinioClient minioClient;
 
+    private IndexService indexService;
+
+
 
     @Autowired
-    public OcrMessageListener(RabbitTemplate rabbitTemplate, OcrService ocrService,MinioClient minioClient) {
+    public OcrMessageListener(RabbitTemplate rabbitTemplate, OcrService ocrService,MinioClient minioClient, IndexService indexService) {
         this.rabbitTemplate = rabbitTemplate;
         this.ocrService = ocrService;
         this.minioClient = minioClient;
+        this.indexService = indexService;
     }
 
     @RabbitHandler
     public void receiveMessage(String filePath) {
         try {
+            System.out.println("filepath: " + filePath);
+            // extract ID from filePath (everything up to the first '/')
+            String[] parts = filePath.split("/", 2); // Split into two parts
+            long id = Long.parseLong(parts[0]); // Parse the first part as a long
+            System.out.println("Extracted ID: " + id);
+
+            filePath = parts[1];
+
             System.out.println("OCRService: Should be Bucket FilePath: "+ filePath);
             File file = downloadFile(filePath);
             String ocrResult = ocrService.performOCR(file);
             System.out.println("ocrResult: "+ocrResult);
-            sendResultBack(filePath,ocrResult);
-            //TODO index documentText in elastic search
-            //TODO remove local tmpFile created in downloadFile
+            sendResultBack(id,ocrResult);
+
+
+            // Index documentText in Elasticsearch
+            Map<String, Object> document = new HashMap<>();
+            document.put("id", id);
+            document.put("text", ocrResult);
+            document.put("filePath", filePath);
+
+            String indexName = "documents";
+            indexService.indexDocument(indexName, String.valueOf(id), document);
+
+            if (file.exists()) {
+                file.delete();
+            }
 
         } catch (TesseractException | IOException e) {
             e.printStackTrace();
@@ -69,7 +95,7 @@ public class OcrMessageListener {
 
     private File downloadFile(String filePath) throws IOException, MinioException, NoSuchAlgorithmException, InvalidKeyException {
         // extract bucket name and object name from the filePath
-        // Assuming the filePath contains "bucketName/objectName"
+        // assuming the filePath contains "bucketName/objectName"
         String[] parts = filePath.split("/");
         String bucketName = parts[0];
         String objectName = parts[1];
@@ -85,7 +111,7 @@ public class OcrMessageListener {
                         .object(objectName)
                         .build())) {
 
-            // Copy the input stream to a local file
+            // copy the input stream to a local file
             Files.copy(inputStream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         }
 
@@ -93,22 +119,25 @@ public class OcrMessageListener {
     }
 
     //todo check if ocrResultPayload class is needed (how does the restapi retrieve the file from queue)
-    private void sendResultBack(String filePath, String ocrResult) {
-        //OcrResultPayload payload = new OcrResultPayload(filePath, ocrResult);
-        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.OCR_RESULT_ROUTING_KEY, ocrResult);
+    private void sendResultBack(Long id, String ocrResult) {
+
+        String message = id +"/"+ ocrResult;
+        //OcrResultPayload ocrResultPayload = new OcrResultPayload(ID, ocrResult);
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.OCR_RESULT_ROUTING_KEY, message);
     }
-/*
+/* does not work because rabbitMQ uses the full qualified class name of which does not exist on the rest api
     @Getter
     @Setter
     static class OcrResultPayload implements Serializable {
-        private String filePath;
+        private Long id;
         private String ocrResult;
 
-        public OcrResultPayload(String filePath, String ocrResult) {
-            this.filePath = filePath;
+        public OcrResultPayload(long id, String ocrResult) {
+            this.id = id;
             this.ocrResult = ocrResult;
         }
     }
 
  */
+
 }

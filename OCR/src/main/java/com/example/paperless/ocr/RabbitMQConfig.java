@@ -9,8 +9,6 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitMQConfig {
-
-
     public static final String EXCHANGE_NAME = "documentExchange";
     public static final String DOCUMENT_QUEUE_NAME = "documentUploadQueue";
     public static final String DOCUMENT_ROUTING_KEY = "document.upload";
@@ -31,11 +29,14 @@ public class RabbitMQConfig {
         return new Queue(DOCUMENT_QUEUE_NAME, true);
     }
 
+
+    // queue and binding for document
     @Bean
     public Binding binding(Queue queue, DirectExchange exchange) {
         return BindingBuilder.bind(queue).to(exchange).with(DOCUMENT_ROUTING_KEY);
     }
 
+    // queue and binding for ocrResult
     @Bean
     public Queue ocrResultQueue() {
         return new Queue(OCR_RESULT_QUEUE_NAME, true);

@@ -70,6 +70,28 @@ services:
     networks:
       - app-network
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.26 # latest open source version. after this version licensing was switched.
+    environment:
+      - discovery.type=single-node # uses single-node mode
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m # limits the used memory to 512MB (chatGPT)
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - app-network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.26
+    environment:
+      ELASTICSEARCH_HOSTS: "http://elasticsearch:9200"
+    depends_on:
+      - elasticsearch
+    ports:
+      - "5601:5601"
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge

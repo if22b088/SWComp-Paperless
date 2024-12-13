@@ -14,3 +14,10 @@ docker exec -it <container_name> psql -U admin -d paperless_postgres
 ##### show tables
 \dt
 
+
+
+
+##### GET _cat/indices?v
+##### GET /<index-name>
+
+
