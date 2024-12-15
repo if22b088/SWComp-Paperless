@@ -3,8 +3,14 @@ services:
     build: ./backend
     ports:
       - "8081:8081"
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      elasticsearch:
+        condition: service_healthy
     networks:
       - app-network
+
   ui:
     build: ./frontend
     ports:
@@ -52,7 +58,10 @@ services:
       - SPRING_RABBITMQ_USERNAME=${RABBITMQ_USER}
       - SPRING_RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_started
+      elasticsearch:
+        condition: service_healthy
     networks:
       - app-network
 
@@ -71,18 +80,27 @@ services:
       - app-network
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.26 # latest open source version. after this version licensing was switched.
+    #image: docker.elastic.co/elasticsearch/elasticsearch:7.17.26 # latest open source version. after this version licensing was switched.
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.5
     environment:
       - discovery.type=single-node # uses single-node mode
       - ES_JAVA_OPTS=-Xms512m -Xmx512m # limits the used memory to 512MB (chatGPT)
+      - xpack.security.enabled=false # Disable security (no HTTPS, no authentication)
+      - xpack.security.http.ssl.enabled=false
     ports:
       - "9200:9200"
       - "9300:9300"
     networks:
       - app-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9200" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:7.17.26
+    #image: docker.elastic.co/kibana/kibana:7.17.26
+    image: docker.elastic.co/kibana/kibana:8.15.5
     environment:
       ELASTICSEARCH_HOSTS: "http://elasticsearch:9200"
     depends_on:

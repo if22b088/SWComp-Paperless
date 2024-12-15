@@ -1,10 +1,12 @@
 package com.example.paperless.ocr;
 
+import com.example.paperless.ocr.config.RabbitMQConfig;
+import com.example.paperless.ocr.model.ElasticDocument;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.minio.GetObjectArgs;
 import io.minio.MinioClient;
 import io.minio.errors.MinioException;
-import lombok.Getter;
-import lombok.Setter;
 import net.sourceforge.tess4j.TesseractException;
 import org.springframework.amqp.rabbit.annotation.RabbitHandler;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -15,7 +17,6 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -23,7 +24,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
 import java.util.Map;
 
 
@@ -31,52 +31,51 @@ import java.util.Map;
 @RabbitListener(queues = RabbitMQConfig.DOCUMENT_QUEUE_NAME)
 public class OcrMessageListener {
 
-    private RabbitTemplate rabbitTemplate;
+    private final RabbitTemplate rabbitTemplate;
 
 
-    private OcrService ocrService;
+    private final OcrWorkerService ocrWorkerService;
 
 
-    private MinioClient minioClient;
+    private final MinioClient minioClient;
 
-    private IndexService indexService;
-
-
+    private final IndexService indexService;
 
     @Autowired
-    public OcrMessageListener(RabbitTemplate rabbitTemplate, OcrService ocrService,MinioClient minioClient, IndexService indexService) {
+    public OcrMessageListener(RabbitTemplate rabbitTemplate, OcrWorkerService ocrWorkerService, MinioClient minioClient, IndexService indexService) {
         this.rabbitTemplate = rabbitTemplate;
-        this.ocrService = ocrService;
+        this.ocrWorkerService = ocrWorkerService;
         this.minioClient = minioClient;
         this.indexService = indexService;
     }
 
     @RabbitHandler
-    public void receiveMessage(String filePath) {
+    public void receiveMessage(String message) {
         try {
-            System.out.println("filepath: " + filePath);
-            // extract ID from filePath (everything up to the first '/')
-            String[] parts = filePath.split("/", 2); // Split into two parts
-            long id = Long.parseLong(parts[0]); // Parse the first part as a long
-            System.out.println("Extracted ID: " + id);
+            // parse JSON message
+            ObjectMapper objectMapper = new ObjectMapper();
+            Map<String, Object> messagePayload = objectMapper.readValue(message, new TypeReference<Map<String, Object>>() {});
 
-            filePath = parts[1];
+            Long id = ((Number) messagePayload.get("id")).longValue();
+            String title = (String) messagePayload.get("title");
+            String bucketName = (String) messagePayload.get("bucketName");
+            String fileName = (String) messagePayload.get("fileName");
 
-            System.out.println("OCRService: Should be Bucket FilePath: "+ filePath);
+            System.out.println("ID: " + id);
+            System.out.println("Title: " + title);
+            System.out.println("Bucket: " + bucketName);
+            System.out.println("File: " + fileName);
+
+            // process file from MinIO
+            String filePath = bucketName + "/" + fileName;
             File file = downloadFile(filePath);
-            String ocrResult = ocrService.performOCR(file);
-            System.out.println("ocrResult: "+ocrResult);
+            String ocrResult = ocrWorkerService.performOCR(file);
+            System.out.println("OCR Result: " + ocrResult);
             sendResultBack(id,ocrResult);
 
-
-            // Index documentText in Elasticsearch
-            Map<String, Object> document = new HashMap<>();
-            document.put("id", id);
-            document.put("text", ocrResult);
-            document.put("filePath", filePath);
-
-            String indexName = "documents";
-            indexService.indexDocument(indexName, String.valueOf(id), document);
+            //index documentText in Elasticsearch
+            ElasticDocument elasticDocument = new ElasticDocument(String.valueOf(id), title, ocrResult,filePath);
+            indexService.indexDocument(elasticDocument);
 
             if (file.exists()) {
                 file.delete();
@@ -118,26 +117,10 @@ public class OcrMessageListener {
         return tempFile;
     }
 
-    //todo check if ocrResultPayload class is needed (how does the restapi retrieve the file from queue)
     private void sendResultBack(Long id, String ocrResult) {
-
         String message = id +"/"+ ocrResult;
         //OcrResultPayload ocrResultPayload = new OcrResultPayload(ID, ocrResult);
         rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, RabbitMQConfig.OCR_RESULT_ROUTING_KEY, message);
     }
-/* does not work because rabbitMQ uses the full qualified class name of which does not exist on the rest api
-    @Getter
-    @Setter
-    static class OcrResultPayload implements Serializable {
-        private Long id;
-        private String ocrResult;
-
-        public OcrResultPayload(long id, String ocrResult) {
-            this.id = id;
-            this.ocrResult = ocrResult;
-        }
-    }
-
- */
 
 }

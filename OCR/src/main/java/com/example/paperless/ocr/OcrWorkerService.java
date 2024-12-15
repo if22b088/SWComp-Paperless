@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import java.io.File;
 
 @Service
-public class OcrService {
+public class OcrWorkerService {
     public String performOCR(File file) throws TesseractException {
         Tesseract tesseract = new Tesseract();
         tesseract.setDatapath("/usr/share/tesseract-ocr/4.00/tessdata/");

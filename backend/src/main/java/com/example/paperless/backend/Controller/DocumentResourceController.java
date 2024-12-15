@@ -2,6 +2,7 @@ package com.example.paperless.backend.Controller;
 
 import com.example.paperless.backend.models.Document;
 import com.example.paperless.backend.businessLogic.DocumentService;
+import com.example.paperless.backend.models.ElasticDocument;
 import lombok.extern.java.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -30,13 +31,11 @@ public class DocumentResourceController {
         return ResponseEntity.ok(documentService.getAllDocuments());
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Document> getDocumentById(@PathVariable Long id) {
-        Document document = documentService.getDocumentById(id);
-        if (document == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
-        return ResponseEntity.ok(document);
+    @GetMapping("/search")
+    public ResponseEntity<List<Document>> searchDocuments(@RequestParam String query) {
+        log.info("Searching documents with query: " + query);
+        List<Document> results=documentService.searchDocuments(query);;
+        return ResponseEntity.ok(results);
     }
 
     @PostMapping(consumes = "multipart/form-data")
@@ -49,19 +48,6 @@ public class DocumentResourceController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
-/*
-    @PutMapping("/{id}")
-    public ResponseEntity<Document> updateDocument(@PathVariable Long id, @RequestBody Document documentDetails) {
-        try {
-            Document updatedDocument = documentService.updateDocument(id, documentDetails);
-            return ResponseEntity.ok(updatedDocument);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
-
-
-    }
-     */
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteDocument(@PathVariable Long id) {

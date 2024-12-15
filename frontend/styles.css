@@ -46,43 +46,28 @@ input[type="file"] {
     margin-top: 20px;
 }
 
-/*
-#documentList {
-    list-style-type: none;
-    padding: 0;
-}
-
-.document-item {
-    padding: 10px;
-    border: 1px solid #ddd;
-    margin: 5px 0;
-    display: flex;
-    justify-content: space-between;
-}
-*/
-
-/* Styles for the document table */
-#documentTable {
+/* Shared styles for tables */
+table {
     width: 100%; /* Ensure the table takes the full width of the container */
     border-collapse: collapse; /* Collapse borders to avoid double borders */
 }
 
-#documentTable th,
-#documentTable td {
+table th,
+table td {
     border-right: 1px solid #ccc; /* Add a right border to cells for column separation */
     padding: 10px; /* Add padding for better spacing */
     text-align: left; /* Align text to the left */
 }
 
-#documentTable th:last-child,
-#documentTable td:last-child {
+table th:last-child,
+table td:last-child {
     border-right: none; /* Remove right border from the last column */
 }
 
-#documentTable th {
+table th {
     background-color: #f2f2f2; /* Light background for headers */
 }
 
-#documentTable tr:nth-child(even) {
+table tr:nth-child(even) {
     background-color: #f9f9f9; /* Zebra striping for better readability */
 }

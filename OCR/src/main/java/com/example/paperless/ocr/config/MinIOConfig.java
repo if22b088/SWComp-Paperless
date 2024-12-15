@@ -1,4 +1,4 @@
-package com.example.paperless.ocr;
+package com.example.paperless.ocr.config;
 
 import io.minio.MinioClient;
 import io.minio.errors.MinioException;

@@ -2,6 +2,7 @@ package com.example.paperless.ocr;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.IndexRequest;
 import co.elastic.clients.elasticsearch.core.IndexResponse;
+import com.example.paperless.ocr.model.ElasticDocument;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -12,16 +13,10 @@ import java.util.Map;
 public class IndexService {
 
     @Autowired
-    private ElasticsearchClient elasticsearchClient;
+    private ElasticRepository elasticRepository;
 
-    public String indexDocument(String index, String documentId, Map<String, Object> document) throws IOException {
-        IndexRequest<Map<String, Object>> indexRequest = IndexRequest.of(i -> i
-                .index(index)
-                .id(documentId)
-                .document(document)
-        );
-
-        IndexResponse indexResponse = elasticsearchClient.index(indexRequest);
-        return indexResponse.id();
+    public void indexDocument(ElasticDocument document) {
+        elasticRepository.save(document);
+        System.out.println("DOCUMENT INDEXED!" + document.getContent());
     }
 }

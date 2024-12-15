@@ -21,7 +21,22 @@
     <h2>Search for Document</h2>
     <input type="text" id="searchQuery" placeholder="Enter search text ..." />
     <button id="searchButton">Search</button>
-    <div id="searchResults"></div>
+    <div id="searchResults">
+        <table id="searchResultsTable">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Content</th>
+                <th>Tags</th>
+                <th>Date of Creation</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody id="searchResultsTableBody">
+            </tbody>
+        </table>
+    </div>
 
     <!-- manage/view document -->
     <h2>Manage Documents</h2>

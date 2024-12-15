@@ -28,9 +28,63 @@ document.getElementById('uploadButton').addEventListener('click', async () => {
     }
 });
 
+
 document.getElementById('searchButton').addEventListener('click', async () => {
     const query = document.getElementById('searchQuery').value;
+
+    if (!query) {
+        alert('Please enter a search query.');
+        return;
+    }
+
+    try {
+        const response = await fetch(`http://localhost:8081/documents/search?query=${encodeURIComponent(query)}`);
+        if (response.ok) {
+            const searchResults = await response.json();
+            const searchResultsTableBody = document.getElementById('searchResultsTableBody');
+            searchResultsTableBody.innerHTML = '';
+
+            if (searchResults.length === 0) {
+                alert('No documents found matching the search criteria.');
+                return;
+            }
+
+            searchResults.forEach(doc => {
+                const row = document.createElement('tr');
+
+                // Create cells for each attribute
+                const idCell = document.createElement('td');
+                idCell.textContent = doc.id;
+                row.appendChild(idCell);
+
+                const titleCell = document.createElement('td');
+                titleCell.textContent = doc.title;
+                row.appendChild(titleCell);
+
+                const contentCell = document.createElement('td');
+                contentCell.textContent = doc.content;
+                row.appendChild(contentCell);
+
+                const tagsCell = document.createElement('td');
+                tagsCell.textContent = doc.tags.join(', ');
+                row.appendChild(tagsCell);
+
+                const dateCell = document.createElement('td');
+                dateCell.textContent = new Date(doc.dateOfCreation).toLocaleString();
+                row.appendChild(dateCell);
+
+                searchResultsTableBody.appendChild(row);
+            });
+
+        } else {
+            alert('Failed to fetch search results.');
+        }
+    } catch (error) {
+        console.error('Error fetching search results:', error);
+    }
 });
+
+
 
 // Get documents on page load
 async function loadDocuments() {

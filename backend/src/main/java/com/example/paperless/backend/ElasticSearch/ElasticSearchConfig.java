@@ -1,4 +1,4 @@
-package com.example.paperless.ocr;
+package com.example.paperless.backend.ElasticSearch;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.transport.rest_client.RestClientTransport;

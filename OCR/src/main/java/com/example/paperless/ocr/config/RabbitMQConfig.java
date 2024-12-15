@@ -1,4 +1,4 @@
-package com.example.paperless.ocr;
+package com.example.paperless.ocr.config;
 
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
@@ -24,13 +24,13 @@ public class RabbitMQConfig {
         return new DirectExchange(EXCHANGE_NAME);
     }
 
+
+    // queue and binding for document
     @Bean
     public Queue queue() {
         return new Queue(DOCUMENT_QUEUE_NAME, true);
     }
 
-
-    // queue and binding for document
     @Bean
     public Binding binding(Queue queue, DirectExchange exchange) {
         return BindingBuilder.bind(queue).to(exchange).with(DOCUMENT_ROUTING_KEY);

@@ -37,14 +37,6 @@ public class Document {
     @NotNull(message = "Date of creation must not be null")
     @PastOrPresent(message = "Date of creation cannot be in the future")
     private LocalDateTime dateOfCreation;
-
-/*
-    @Lob
-    @Column
-    private byte[] fileData;
-
- */
-
     public Document() {
         this.dateOfCreation = LocalDateTime.now();
     }
