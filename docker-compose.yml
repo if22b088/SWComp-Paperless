@@ -87,6 +87,7 @@ services:
       - ES_JAVA_OPTS=-Xms512m -Xmx512m # limits the used memory to 512MB (chatGPT)
       - xpack.security.enabled=false # Disable security (no HTTPS, no authentication)
       - xpack.security.http.ssl.enabled=false
+      - logger.level=ERROR
     ports:
       - "9200:9200"
       - "9300:9300"

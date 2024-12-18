@@ -5,10 +5,7 @@ import com.example.paperless.backend.models.Document;
 import com.example.paperless.backend.models.ElasticDocument;
 import com.example.paperless.backend.rabbitMQ.RabbitMQSenderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.minio.BucketExistsArgs;
-import io.minio.MakeBucketArgs;
-import io.minio.MinioClient;
-import io.minio.PutObjectArgs;
+import io.minio.*;
 import lombok.extern.java.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -59,6 +56,7 @@ public class DocumentService {
 
         String bucketName = "documents";
         InputStream fileStream = new ByteArrayInputStream(file.getBytes());
+        //InputStream fileStream = file.getInputStream();
 
         //save document to minIO bucket
         boolean bucketExists = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build());
@@ -71,6 +69,7 @@ public class DocumentService {
                         .bucket(bucketName)
                         .object(fileName)
                         .stream(fileStream, fileStream.available(), -1)
+                        .contentType(file.getContentType()) // Preserve the file's content type
                         .build()
         );
 
@@ -120,6 +119,8 @@ public class DocumentService {
        return documentRepository.findDocumentsByIds(ids);
     }
 
+
+    /*
     public void deleteDocument(Long id) {
         if (documentRepository.existsById(id)) {
             documentRepository.deleteById(id);
@@ -128,4 +129,64 @@ public class DocumentService {
         }
     }
 
+     */
+    public void deleteDocument(Long id) {
+        Document document = getDocumentById(id);
+        if (document == null) {
+            throw new IllegalArgumentException("Document not found");
+        }
+
+        String bucketName = "documents";
+        String fileName = document.getTitle();
+
+        try {
+            //delete from minIO
+            minioClient.removeObject(
+                    RemoveObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(fileName)
+                            .build()
+            );
+            log.info("Successfully deleted document from MinIO: " + fileName);
+        } catch (Exception e) {
+            log.severe("Error deleting document from MinIO: " + e.getMessage());
+            throw new RuntimeException("Failed to delete document from MinIO");
+        }
+
+        try {
+            //delete from elasticSearch
+            elasticRepository.deleteById(String.valueOf(id));
+            log.info("Successfully deleted document from Elasticsearch: " + id);
+        } catch (Exception e) {
+            log.severe("Error deleting document from Elasticsearch: " + e.getMessage());
+            throw new RuntimeException("Failed to delete document from Elasticsearch");
+        }
+
+        //delete from db
+        documentRepository.deleteById(id);
+        log.info("Successfully deleted document from the database: " + id);
+    }
+
+
+    public byte[] downloadDocument(Long id) throws Exception {
+        Document document = getDocumentById(id);
+        if (document == null) {
+            throw new IllegalArgumentException("Document not found");
+        }
+
+        String bucketName = "documents";
+        String fileName = document.getTitle();
+
+        try (InputStream stream = minioClient.getObject(
+                GetObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(fileName)
+                        .build())) {
+
+            return stream.readAllBytes();
+        } catch (Exception e) {
+            log.severe("Error retrieving document from MinIO: " + e.getMessage());
+            throw new Exception("Could not download document");
+        }
+    }
 }

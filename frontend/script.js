@@ -118,7 +118,23 @@ async function loadDocuments() {
             dateCell.textContent = new Date(doc.dateOfCreation).toLocaleString();
             row.appendChild(dateCell);
 
-            // Create and  cell for the delete button
+            // create button and cell for the download button
+            const downloadActionsCell = document.createElement('td');
+            const downloadButton = document.createElement('button');
+            downloadButton.textContent = 'Download';
+            //store the doc.id and doc.title in data attribute
+            downloadButton.dataset.docId = doc.id;
+            downloadButton.dataset.docTitle = doc.title;
+            downloadButton.onclick = (event) => {
+                const docId = event.target.dataset.docId;
+                const docTitle = event.target.dataset.docTitle;
+                downloadDocument(docId, docTitle);
+            };
+            downloadActionsCell.appendChild(downloadButton);
+            row.appendChild(downloadActionsCell);
+
+
+            // create button and cell for the delete button
             const actionsCell = document.createElement('td');
             const deleteButton = document.createElement('button');
             deleteButton.textContent = 'Delete';
@@ -148,6 +164,29 @@ async function deleteDocument(id) {
     } catch (error) {
         console.error('Error deleting document:', error);
     }
+}
+
+function downloadDocument(docId, docTitle) {
+    console.log('Downloading document with ID:', docId);
+    fetch(`http://localhost:8081/documents/download/${docId}`)
+        .then(response => {
+            if (response.ok) {
+                return response.blob();
+            } else {
+                throw new Error('Failed to download document');
+            }
+        })
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = docTitle;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+        })
+        .catch(error => console.error('Error downloading document:', error));
 }
 
 // Initial load

@@ -58,4 +58,23 @@ public class DocumentResourceController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
+
+    @GetMapping("/download/{id}")
+    public ResponseEntity<byte[]> downloadDocument(@PathVariable Long id) {
+        try {
+            log.info("Downloading document with ID: " + id);
+            byte[] documentBytes = documentService.downloadDocument(id);
+
+            Document document = documentService.getDocumentById(id);
+            String fileName = document != null ? document.getTitle() : "document";
+
+            return ResponseEntity.ok()
+                    .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"")
+
+                    .body(documentBytes);
+        } catch (Exception e) {
+            log.severe("Error downloading document with ID " + id + ": " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 }

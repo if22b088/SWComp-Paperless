@@ -99,6 +99,7 @@ public class OcrMessageListener {
         String bucketName = parts[0];
         String objectName = parts[1];
 
+
         // create a file on the local file system where the file will be stored
         Path tempFilePath = Paths.get(System.getProperty("java.io.tmpdir"), objectName);
         File tempFile = tempFilePath.toFile();
