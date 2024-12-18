@@ -34,6 +34,7 @@ document.getElementById('searchButton').addEventListener('click', async () => {
 
     if (!query) {
         alert('Please enter a search query.');
+        searchResultsTableBody.innerHTML = '';
         return;
     }
 

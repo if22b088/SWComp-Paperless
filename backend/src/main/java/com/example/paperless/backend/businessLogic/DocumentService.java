@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.minio.*;
 import lombok.extern.java.Log;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -26,9 +25,8 @@ public class DocumentService {
     private final MinioClient minioClient;
     private final ElasticRepository elasticRepository;
 
-
     @Autowired
-    public DocumentService( DocumentRepository documentRepository, RabbitMQSenderService rabbitMQService, MinioClient minioClient, ElasticRepository elasticRepository) {
+    public DocumentService(DocumentRepository documentRepository, RabbitMQSenderService rabbitMQService, MinioClient minioClient, ElasticRepository elasticRepository) {
         this.documentRepository = documentRepository;
         this.rabbitMQService = rabbitMQService;
         this.minioClient = minioClient;
@@ -36,14 +34,14 @@ public class DocumentService {
     }
 
     public List<Document> getAllDocuments() {
+        log.info("Fetching all documents...");
         return documentRepository.findAll();
     }
 
-
     public Document getDocumentById(Long id) {
+        log.info("Fetching document with ID: " + id);
         return documentRepository.findById(id).orElse(null);
     }
-
 
     public Document addDocument(MultipartFile file) throws Exception {
         if (file.isEmpty()) {
@@ -56,83 +54,86 @@ public class DocumentService {
 
         String bucketName = "documents";
         InputStream fileStream = new ByteArrayInputStream(file.getBytes());
-        //InputStream fileStream = file.getInputStream();
 
-        //save document to minIO bucket
-        boolean bucketExists = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build());
-        if (!bucketExists) {
-            minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
+        try {
+            boolean bucketExists = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucketName).build());
+            if (!bucketExists) {
+                minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
+                log.info("Created new bucket: " + bucketName);
+            }
+
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(fileName)
+                            .stream(fileStream, fileStream.available(), -1)
+                            .contentType(file.getContentType())
+                            .build()
+            );
+            log.info("Successfully uploaded file to MinIO: " + fileName);
+        } catch (Exception e) {
+            log.severe("Error uploading file to MinIO: " + e.getMessage());
+            throw new RuntimeException("Failed to upload file to MinIO");
         }
 
-        minioClient.putObject(
-                PutObjectArgs.builder()
-                        .bucket(bucketName)
-                        .object(fileName)
-                        .stream(fileStream, fileStream.available(), -1)
-                        .contentType(file.getContentType()) // Preserve the file's content type
-                        .build()
-        );
-
-        //save document to database
         Document document = new Document();
         document.setTitle(fileName);
         document.setContent("File uploaded: " + fileName);
         document.setDateOfCreation(LocalDateTime.now());
         Document savedDocument = documentRepository.save(document);
+        log.info("Document saved in database with ID: " + savedDocument.getId());
 
-        // create json message
         Map<String, Object> messagePayload = new HashMap<>();
         messagePayload.put("id", savedDocument.getId());
         messagePayload.put("title", savedDocument.getTitle());
         messagePayload.put("bucketName", bucketName);
         messagePayload.put("fileName", fileName);
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        String message = objectMapper.writeValueAsString(messagePayload);
-
-        // send message to RabbitMQ
-        rabbitMQService.sendMessage(message);
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            String message = objectMapper.writeValueAsString(messagePayload);
+            rabbitMQService.sendMessage(message);
+            log.info("Message sent to RabbitMQ: " + message);
+        } catch (Exception e) {
+            log.severe("Error sending message to RabbitMQ: " + e.getMessage());
+            throw new RuntimeException("Failed to send message to RabbitMQ");
+        }
 
         return savedDocument;
     }
 
     public void updateDocument(Long id, String documentContent) {
+        log.info("Updating document with ID: " + id);
         Optional<Document> tempDocument = documentRepository.findById(id);
         if (tempDocument.isPresent()) {
             Document document = tempDocument.get();
             document.setContent(documentContent);
-            //document.setDateOfCreation(LocalDateTime.now()); <--- now we dont update the upload time
             documentRepository.save(document);
+            log.info("Document updated successfully with ID: " + id);
         } else {
+            log.warning("Document not found for ID: " + id);
             throw new IllegalArgumentException("Document not found");
         }
     }
 
     public List<Document> searchDocuments(String query) {
-       List<ElasticDocument> elasticSearchResults = elasticRepository.findByTitleContainingOrContentContaining(query, query);
-       List<Long> ids = new ArrayList<>();
+        log.info("Searching documents with query: " + query);
+        List<ElasticDocument> elasticSearchResults = elasticRepository.findByTitleContainingOrContentContaining(query, query);
+        List<Long> ids = new ArrayList<>();
 
         for (ElasticDocument doc : elasticSearchResults) {
             ids.add(Long.parseLong(doc.getId()));
+            log.info("Found documents matching query: " + query);
         }
 
-       return documentRepository.findDocumentsByIds(ids);
+        return documentRepository.findDocumentsByIds(ids);
     }
 
-
-    /*
     public void deleteDocument(Long id) {
-        if (documentRepository.existsById(id)) {
-            documentRepository.deleteById(id);
-        } else {
-            throw new IllegalArgumentException("Document not found");
-        }
-    }
-
-     */
-    public void deleteDocument(Long id) {
+        log.info("Deleting document with ID: " + id);
         Document document = getDocumentById(id);
         if (document == null) {
+            log.warning("Document not found for ID: " + id);
             throw new IllegalArgumentException("Document not found");
         }
 
@@ -140,7 +141,6 @@ public class DocumentService {
         String fileName = document.getTitle();
 
         try {
-            //delete from minIO
             minioClient.removeObject(
                     RemoveObjectArgs.builder()
                             .bucket(bucketName)
@@ -154,7 +154,6 @@ public class DocumentService {
         }
 
         try {
-            //delete from elasticSearch
             elasticRepository.deleteById(String.valueOf(id));
             log.info("Successfully deleted document from Elasticsearch: " + id);
         } catch (Exception e) {
@@ -162,15 +161,15 @@ public class DocumentService {
             throw new RuntimeException("Failed to delete document from Elasticsearch");
         }
 
-        //delete from db
         documentRepository.deleteById(id);
         log.info("Successfully deleted document from the database: " + id);
     }
 
-
     public byte[] downloadDocument(Long id) throws Exception {
+        log.info("Downloading document with ID: " + id);
         Document document = getDocumentById(id);
         if (document == null) {
+            log.warning("Document not found for ID: " + id);
             throw new IllegalArgumentException("Document not found");
         }
 
@@ -183,6 +182,7 @@ public class DocumentService {
                         .object(fileName)
                         .build())) {
 
+            log.info("Successfully retrieved document from MinIO: " + fileName);
             return stream.readAllBytes();
         } catch (Exception e) {
             log.severe("Error retrieving document from MinIO: " + e.getMessage());

@@ -46,6 +46,7 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+      RABBITMQ_LOGS: "-warn"
     ports:
       - "5672:5672"   # messaging
       - "9093:15672" # management UI
@@ -70,21 +71,19 @@ services:
     environment:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_LOGGER_LEVEL: "ERROR"
     ports:
-      - "9000:9000"  # API
-      - "9001:9001"  # Console
+      - "9000:9000"  #api
+      - "9090:9001"  #webUI/console
     command: server /data --console-address ":9001"
-   # volumes:
-   #   - minio_data:/data
     networks:
       - app-network
 
   elasticsearch:
-    #image: docker.elastic.co/elasticsearch/elasticsearch:7.17.26 # latest open source version. after this version licensing was switched.
     image: docker.elastic.co/elasticsearch/elasticsearch:8.15.5
     environment:
       - discovery.type=single-node # uses single-node mode
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m # limits the used memory to 512MB (chatGPT)
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m # limits the used memory to 512MB
       - xpack.security.enabled=false # Disable security (no HTTPS, no authentication)
       - xpack.security.http.ssl.enabled=false
       - logger.level=ERROR
@@ -100,10 +99,11 @@ services:
       retries: 5
 
   kibana:
-    #image: docker.elastic.co/kibana/kibana:7.17.26
     image: docker.elastic.co/kibana/kibana:8.15.5
     environment:
       ELASTICSEARCH_HOSTS: "http://elasticsearch:9200"
+      LOGGING_ROOT_LEVEL: warn # root log level set to warning
+      #LOGGING_QUIET: "true" # no startup messages
     depends_on:
       - elasticsearch
     ports:
