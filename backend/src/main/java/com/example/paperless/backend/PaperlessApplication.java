@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication
 
-// the enable notations are necessary to tellSpring to look for JPA/elasticsearch only in these two packages. otherwise there would be a conflict
+// the enable notations are necessary to tell Spring to look for JPA/elasticsearch only in these two packages. otherwise there would be a conflict
 @EnableJpaRepositories(basePackages = "com.example.paperless.backend.businessLogic")
 @EnableElasticsearchRepositories(basePackages = "com.example.paperless.backend.ElasticSearch")
 public class PaperlessApplication {
