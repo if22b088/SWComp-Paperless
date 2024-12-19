@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "description": "Document Management System API",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "title": "DMS REST API"
   },
   "host": "localhost:8081",
@@ -13,7 +13,7 @@
     "/documents": {
       "get": {
         "summary": "Get a list of documents",
-        "description": "Returns a list of hardcoded documents",
+        "description": "Returns a list of all documents",
         "produces": [
           "application/json"
         ],
@@ -26,73 +26,72 @@
                 "$ref": "#/definitions/Document"
               }
             }
+          },
+          "500": {
+            "description": "Internal server error"
           }
         }
       },
       "post": {
         "summary": "Add a new document",
-        "description": "Stores the document data (in memory cache)",
+        "description": "Uploads a document as a multipart file",
         "consumes": [
-          "application/json"
+          "multipart/form-data"
         ],
         "parameters": [
           {
-            "in": "body",
+            "in": "formData",
             "name": "document",
-            "description": "Document to be added",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/Document"
-            }
+            "type": "file",
+            "description": "Document file to be uploaded",
+            "required": true
           }
         ],
         "responses": {
           "201": {
-            "description": "Document created"
+            "description": "Document created",
+            "schema": {
+              "$ref": "#/definitions/Document"
+            }
           },
-          "400": {
-            "description": "Invalid input"
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/documents/search": {
+      "get": {
+        "summary": "Search documents",
+        "description": "Search for documents using a query string",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "query",
+            "type": "string",
+            "description": "Search query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Document"
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
           }
         }
       }
     },
     "/documents/{id}": {
-      "put": {
-        "summary": "Update an existing document",
-        "description": "Updates the document by ID",
-        "consumes": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "required": true,
-            "type": "integer",
-            "format": "int64",
-            "description": "ID of the document to update"
-          },
-          {
-            "in": "body",
-            "name": "document",
-            "description": "Document data to update",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/Document"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Document updated"
-          },
-          "404": {
-            "description": "Document not found"
-          }
-        }
-      },
       "delete": {
-        "summary": "Delete an existing document",
+        "summary": "Delete a document",
         "description": "Deletes the document by ID",
         "parameters": [
           {
@@ -110,6 +109,37 @@
           },
           "404": {
             "description": "Document not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/documents/download/{id}": {
+      "get": {
+        "summary": "Download a document",
+        "description": "Downloads the document as a file",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "type": "integer",
+            "format": "int64",
+            "description": "ID of the document to download"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Document downloaded",
+            "schema": {
+              "type": "string",
+              "format": "binary"
+            }
+          },
+          "500": {
+            "description": "Internal server error"
           }
         }
       }
