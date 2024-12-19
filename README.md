@@ -1,23 +1,29 @@
 # Run docker containers (backend REST API & Frontend UI) 
 docker compose up --build --remove-orphans
 
-#### REST API:
+## Ports
+
+### REST API:
 localhost:8081/document
+### Adminer (Postgres WebUI)
+localhost:9091
+### RabbitMQ WebUI
+localhost:9093
+### MinIO WebUI:
+localhost:9090
+### Kibana (Elastic Search WebUI)
+localhost:9092
 
 
-
-##  useful commands
+##  Useful Commands
 docker exec -it <container_name> psql -U admin -d paperless_postgres
 
-##### show dbs
+#### show dbs
 \l
-##### show tables
+#### show tables
 \dt
 
 
-
-
-##### GET _cat/indices?v
-##### GET /<index-name>
-
-
+### Elastic Search Tools Query Commands
+#### GET _cat/indices?v
+#### GET /<index-name>

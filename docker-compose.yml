@@ -107,7 +107,7 @@ services:
     depends_on:
       - elasticsearch
     ports:
-      - "5601:5601"
+      - "9092:5601"
     networks:
       - app-network
 
